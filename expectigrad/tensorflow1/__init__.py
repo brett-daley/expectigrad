@@ -1,0 +1,1 @@
+from expectigrad.tensorflow1.expectigrad_optimizer import ExpectigradOptimizer
