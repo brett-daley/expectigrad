@@ -1,10 +1,9 @@
-import sys; sys.path.append('.')  # TODO: Remove after we make a package
 import itertools
 import numpy as np
 import unittest
 import tensorflow as tf
 
-from expectigrad.tensorflow2 import Expectigrad
+from expectigrad import Expectigrad
 
 
 class TestExpectigradTensorflow2(unittest.TestCase):
