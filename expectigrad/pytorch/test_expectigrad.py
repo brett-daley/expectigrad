@@ -18,7 +18,7 @@ class TestExpectigradPytorch(unittest.TestCase):
                   [0.03922201, 0.00117807],
                   [0.01949826, 0.00014451])
 
-        optimizer = Expectigrad([x], lr=0.5, eps=1.0)
+        optimizer = Expectigrad([x], lr=0.5, beta=0.0, eps=1.0, sparse_counter=False)
 
         for t in itertools.count():
             # Check if the current point is correct
