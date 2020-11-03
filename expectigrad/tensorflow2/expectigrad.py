@@ -5,7 +5,7 @@ from tensorflow.python.ops import state_ops
 
 
 class Expectigrad(optimizer_v2.OptimizerV2):
-    """Optimizer that implements the Expectigrad algorithm."""
+    """TensorFlow 2.x Optimizer that implements the Expectigrad algorithm."""
 
     def __init__(self, learning_rate=0.001, beta=0.9, epsilon=1e-8, sparse_counter=True,
                  name='Expectigrad', **kwargs):
@@ -34,12 +34,13 @@ class Expectigrad(optimizer_v2.OptimizerV2):
         Raises:
             ValueError: beta is not in the interval [0, 1) or epsilon is nonpositive.
         """
-
         super(Expectigrad, self).__init__(name, **kwargs)
+
         if not (0.0 <= beta < 1.0):
-            raise ValueError("beta ({}) must be in [0,1)".format(beta))
+            raise ValueError("beta must be in [0,1) but got {}".format(beta))
         if epsilon <= 0.0:
-            raise ValueError("epsilon ({}) must be greater than 0".format(epsilon))
+            raise ValueError("epsilon must be greater than 0 but got {}".format(epsilon))
+
         self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
         self._set_hyper('beta', beta)
         self._set_hyper('epsilon', epsilon)

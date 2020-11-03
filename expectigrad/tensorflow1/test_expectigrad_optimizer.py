@@ -8,7 +8,7 @@ from expectigrad_optimizer import ExpectigradOptimizer
 
 class TestExpectigradTensorflow1(unittest.TestCase):
     def setUp(self):
-        self.optimizer = ExpectigradOptimizer(learning_rate=0.5, epsilon=1.0)
+        self.optimizer = ExpectigradOptimizer(learning_rate=0.5, beta=0.0, epsilon=1.0, sparse_counter=False)
 
     def test_apply_dense(self):
         x = tf.Variable([1., 1.])    # Current point
