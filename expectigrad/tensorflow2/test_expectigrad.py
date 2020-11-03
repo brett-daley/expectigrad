@@ -8,7 +8,7 @@ from expectigrad import Expectigrad
 
 class TestExpectigradTensorflow2(unittest.TestCase):
     def setUp(self):
-        self.optimizer = Expectigrad(learning_rate=0.5, epsilon=1.0)
+        self.optimizer = Expectigrad(learning_rate=0.5, beta=0.0, epsilon=1.0, sparse_counter=False)
 
     def test_resource_apply_dense(self):
         x = tf.Variable([1., 1.])    # Current point
@@ -37,10 +37,15 @@ class TestExpectigradTensorflow2(unittest.TestCase):
             self.optimizer.apply_gradients(zip(gradients, [x]))
 
     def test_get_config(self):
-        config = self.optimizer.get_config()
-        self.assertEqual(config, {'name': 'Expectigrad',
-                                  'learning_rate': 0.5,
-                                  'epsilon': 1.0})
+        config = {
+            'name': 'Expectigrad',
+            'learning_rate': 0.5,
+            'beta': 0.0,
+            'epsilon': 1.0,
+            'use_momentum': False,
+            'sparse_counter': False,
+        }
+        self.assertEqual(self.optimizer.get_config(), config)
 
 
 if __name__ == '__main__':
