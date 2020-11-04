@@ -1,9 +1,11 @@
 import itertools
 import numpy as np
 import unittest
+import sys
+sys.path.extend(['.', '..'])
 import torch
 
-from expectigrad import Expectigrad
+from expectigrad.pytorch import Expectigrad
 
 
 class TestExpectigradPytorch(unittest.TestCase):

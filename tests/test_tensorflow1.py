@@ -1,9 +1,11 @@
 import itertools
 import numpy as np
 import unittest
+import sys
+sys.path.extend(['.', '..'])
 import tensorflow as tf
 
-from expectigrad_optimizer import ExpectigradOptimizer
+from expectigrad.tensorflow1 import ExpectigradOptimizer
 
 
 class TestExpectigradTensorflow1(unittest.TestCase):
