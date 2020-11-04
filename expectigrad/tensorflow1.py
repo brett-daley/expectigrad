@@ -48,8 +48,6 @@ class ExpectigradOptimizer(optimizer.Optimizer):
 
         # Tensor versions of the constructor arguments, created in _prepare().
         self._lr_t = None
-        self._beta_t = None
-        self._epsilon_t = None
 
     def _create_slots(self, var_list):
         # Create the non-slot variable on the same device as the first variable.
@@ -75,15 +73,13 @@ class ExpectigradOptimizer(optimizer.Optimizer):
     def _prepare(self):
         lr = self._call_if_callable(self._lr)
         self._lr_t = ops.convert_to_tensor(lr, name='learning_rate')
-        self._beta_t = ops.convert_to_tensor(self._beta, name='beta')
-        self._epsilon_t = ops.convert_to_tensor(self._epsilon, name='epsilon')
 
     def _apply_dense(self, grad, var):
         var_dtype = var.dtype.base_dtype
 
         lr = math_ops.cast(self._lr_t, var_dtype)
-        beta = math_ops.cast(self._beta_t, var_dtype)
-        epsilon = math_ops.cast(self._epsilon_t, var_dtype),
+        beta = self._beta
+        epsilon = self._epsilon
         t = math_ops.cast(self.iterations + 1, var_dtype)
 
         ops = []
