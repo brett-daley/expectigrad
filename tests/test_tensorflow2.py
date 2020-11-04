@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 import unittest
 import sys
@@ -6,48 +5,81 @@ sys.path.extend(['.', '..'])
 import tensorflow as tf
 
 from expectigrad.tensorflow2 import Expectigrad
+from expectigrad.testing import generate_test_sequence
 
 
 class TestExpectigradTensorflow2(unittest.TestCase):
     def setUp(self):
-        self.optimizer = Expectigrad(learning_rate=0.5, beta=0.0, epsilon=1.0, sparse_counter=False)
+        self.T = 1_000  # Number of iterations in each test
+        self.x = np.asarray([1.0, 1.0], dtype=np.float64)  # Start point for each test
 
-    def test_resource_apply_dense(self):
-        x = tf.Variable([1., 1.])    # Current point
-        X_TRUE = ([1.,         1.],  # Correct values for t=0...7
-                  [0.66666667, 0.55555556],
-                  [0.41972319, 0.25811745],
-                  [0.24979281, 0.09721015],
-                  [0.14105998, 0.02907569],
-                  [0.075971,   0.00675834],
-                  [0.03922201, 0.00117807],
-                  [0.01949826, 0.00014451])
+    def test_apply_dense(self):
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.0, epsilon=1.0, sparse_counter=False)
+        optimizer = Expectigrad(learning_rate=0.5, beta=0.0, epsilon=1.0,
+                                sparse_counter=False)
+        self._run_test(optimizer, self.x, X_TRUE)
 
-        for t in itertools.count():
-            # Check if the current point is correct
-            self.assertTrue(np.allclose(x.numpy() - np.asarray(X_TRUE[t]),
-                                        b=0.0, rtol=0.0, atol=1e-7))
-            if t == 7:
-                break  # End test
+    def test_momentum(self):
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.9, epsilon=1.0, sparse_counter=False)
+        optimizer = Expectigrad(learning_rate=0.5, beta=0.9, epsilon=1.0,
+                                sparse_counter=False)
+        self._run_test(optimizer, self.x, X_TRUE)
 
-            # Our function to be minimized is f(x_0,x_1) = x_0^2 + 4*x_1^2
-            with tf.GradientTape() as tape:
-                y = tf.reduce_sum(tf.constant([1.0, 4.0]) * tf.square(x))
+    def test_sparse_counter(self):
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.9, epsilon=1.0, sparse_counter=True)
+        optimizer = Expectigrad(learning_rate=0.5, beta=0.9, epsilon=1.0,
+                                         sparse_counter=True)
+        self._run_test(optimizer, self.x, X_TRUE)
 
-            # Take a gradient step with Expectigrad
-            gradients = tape.gradient(y, [x])
-            self.optimizer.apply_gradients(zip(gradients, [x]))
+    def test_bad_beta(self):
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(beta=-0.1)
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(beta=1.0)
+
+    def test_bad_epsilon(self):
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(epsilon=0.0)
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(epsilon=-0.1)
 
     def test_get_config(self):
+        optimizer = Expectigrad(learning_rate=0.5, beta=0.9, epsilon=1.0,
+                                sparse_counter=True)
         config = {
             'name': 'Expectigrad',
             'learning_rate': 0.5,
-            'beta': 0.0,
+            'beta': 0.9,
             'epsilon': 1.0,
-            'use_momentum': False,
-            'sparse_counter': False,
+            'use_momentum': True,
+            'sparse_counter': True,
         }
-        self.assertEqual(self.optimizer.get_config(), config)
+        self.assertEqual(optimizer.get_config(), config)
+
+    def _run_test(self, optimizer, start_point, true_sequence):
+        x = tf.Variable(start_point, dtype=tf.float64)
+
+        for i, val in enumerate(true_sequence):
+            t = i + 1
+
+            if (t % 2) == 1:
+                a = tf.constant([3.0, 0.0], dtype=tf.float64)
+            else:
+                a = tf.constant([1.0, 8.0], dtype=tf.float64)
+
+            with tf.GradientTape() as tape:
+                y = tf.reduce_sum(a * tf.square(x))
+
+            # Take a gradient step with Expectigrad
+            gradients = tape.gradient(y, [x])
+            optimizer.apply_gradients(zip(gradients, [x]))
+
+            # Check if the current point is correct
+            # print(i+1, x.numpy().astype(str), val.astype(str), flush=True)
+            self.assertTrue(np.allclose(x.numpy(), val, rtol=1e-10, atol=0.0))
 
 
 if __name__ == '__main__':

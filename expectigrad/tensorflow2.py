@@ -42,25 +42,25 @@ class Expectigrad(optimizer_v2.OptimizerV2):
             raise ValueError("epsilon must be greater than 0 but got {}".format(epsilon))
 
         self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
-        self._set_hyper('beta', beta)
-        self._set_hyper('epsilon', epsilon)
-        self.use_momentum = (beta > 0.0)
-        self.sparse_counter = sparse_counter
+        self._beta = beta
+        self._epsilon = epsilon
+        self._use_momentum = (beta > 0.0)
+        self._sparse_counter = sparse_counter
 
     def _create_slots(self, var_list):
         for var in var_list:
             self.add_slot(var, 'sum')
-            if self.sparse_counter:
+            if self._sparse_counter:
                 self.add_slot(var, 'counter')
-            if self.use_momentum:
+            if self._use_momentum:
                 self.add_slot(var, 'momentum')
 
     def _resource_apply_dense(self, grad, var, apply_state=None):
         var_dtype = var.dtype.base_dtype
 
         lr = self._decayed_lr(var_dtype)
-        beta = self._get_hyper('beta', var_dtype)
-        epsilon = self._get_hyper('epsilon', var_dtype)
+        beta = self._beta
+        epsilon = self._epsilon
         t = math_ops.cast(self.iterations + 1, var_dtype)
 
         ops = []
@@ -72,7 +72,7 @@ class Expectigrad(optimizer_v2.OptimizerV2):
         ops.append(state_ops.assign(s, s_new))
 
         # Update running counter
-        if self.sparse_counter:
+        if self._sparse_counter:
             n = self.get_slot(var, 'counter')
             n_new = n + math_ops.sign(grad_sq)
             ops.append(state_ops.assign(n, n_new))
@@ -85,7 +85,7 @@ class Expectigrad(optimizer_v2.OptimizerV2):
         step = grad / (epsilon + math_ops.sqrt(average))
 
         # Update momentum
-        if self.use_momentum:
+        if self._use_momentum:
             m = self.get_slot(var, 'momentum')
             m_new = beta * m + (1.0 - beta) * step
             ops.append(state_ops.assign(m, m_new))
@@ -102,8 +102,8 @@ class Expectigrad(optimizer_v2.OptimizerV2):
     def get_config(self):
         config = super(Expectigrad, self).get_config()
         config.update({'learning_rate': self._serialize_hyperparameter('learning_rate'),
-                       'beta': self._serialize_hyperparameter('beta'),
-                       'epsilon': self._serialize_hyperparameter('epsilon'),
-                       'use_momentum': self.use_momentum,
-                       'sparse_counter': self.sparse_counter})
+                       'beta': self._beta,
+                       'epsilon': self._epsilon,
+                       'use_momentum': self._use_momentum,
+                       'sparse_counter': self._sparse_counter})
         return config

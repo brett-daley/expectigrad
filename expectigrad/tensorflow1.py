@@ -43,8 +43,8 @@ class ExpectigradOptimizer(optimizer.Optimizer):
         self._lr = learning_rate
         self._beta = beta
         self._epsilon = epsilon
-        self.use_momentum = (beta > 0.0)
-        self.sparse_counter = sparse_counter
+        self._use_momentum = (beta > 0.0)
+        self._sparse_counter = sparse_counter
 
         # Tensor versions of the constructor arguments, created in _prepare().
         self._lr_t = None
@@ -58,9 +58,9 @@ class ExpectigradOptimizer(optimizer.Optimizer):
         # Create slots for the sum, counter, and momentum.
         for var in var_list:
             self._zeros_slot(var, 'sum', self._name)
-            if self.sparse_counter:
+            if self._sparse_counter:
                 self._zeros_slot(var, 'counter', self._name)
-            if self.use_momentum:
+            if self._use_momentum:
                 self._zeros_slot(var, 'momentum', self._name)
 
     @property
