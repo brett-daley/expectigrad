@@ -11,7 +11,7 @@ from expectigrad.testing import generate_test_sequence
 class TestExpectigradTensorflow2(unittest.TestCase):
     def setUp(self):
         self.T = 1_000  # Number of iterations in each test
-        self.x = np.asarray([1.0, 1.0], dtype=np.float64)  # Start point for each test
+        self.x = np.ones(2, dtype=np.float64)  # Start point for each test
 
     def test_apply_dense(self):
         X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
@@ -78,8 +78,9 @@ class TestExpectigradTensorflow2(unittest.TestCase):
             optimizer.apply_gradients(zip(gradients, [x]))
 
             # Check if the current point is correct
-            # print(i+1, x.numpy().astype(str), val.astype(str), flush=True)
-            self.assertTrue(np.allclose(x.numpy(), val, rtol=1e-10, atol=0.0))
+            x_out = x.numpy()
+            # print(i+1, x_out.astype(str), val.astype(str), flush=True)
+            self.assertTrue(np.allclose(x_out, val, rtol=1e-10, atol=0.0))
 
 
 if __name__ == '__main__':

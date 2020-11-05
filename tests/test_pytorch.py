@@ -1,4 +1,3 @@
-import itertools
 import numpy as np
 import unittest
 import sys
@@ -6,36 +5,77 @@ sys.path.extend(['.', '..'])
 import torch
 
 from expectigrad.pytorch import Expectigrad
+from expectigrad.testing import generate_test_sequence
 
 
 class TestExpectigradPytorch(unittest.TestCase):
+    def setUp(self):
+        self.T = 1_000  # Number of iterations in each test
+        self.x = np.ones(2, dtype=np.float64)  # Start point for each test
+
     def test_step(self):
-        x = torch.ones(2, requires_grad=True)  # Current point
-        X_TRUE = ([1.,         1.],            # Correct values for t=0...7
-                  [0.66666667, 0.55555556],
-                  [0.41972319, 0.25811745],
-                  [0.24979281, 0.09721015],
-                  [0.14105998, 0.02907569],
-                  [0.075971,   0.00675834],
-                  [0.03922201, 0.00117807],
-                  [0.01949826, 0.00014451])
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.0, epsilon=1.0, sparse_counter=False)
+        optimizer_callable = lambda params: Expectigrad(params, lr=0.5, beta=0.0,
+                                                        eps=1.0, sparse_counter=False)
+        self._run_test(optimizer_callable, self.x, X_TRUE)
 
-        optimizer = Expectigrad([x], lr=0.5, beta=0.0, eps=1.0, sparse_counter=False)
+    def test_momentum(self):
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.9, epsilon=1.0, sparse_counter=False)
+        optimizer_callable = lambda params: Expectigrad(params, lr=0.5, beta=0.9,
+                                                        eps=1.0, sparse_counter=False)
+        self._run_test(optimizer_callable, self.x, X_TRUE)
 
-        for t in itertools.count():
-            # Check if the current point is correct
-            self.assertTrue(np.allclose(x.detach().numpy() - np.asarray(X_TRUE[t]),
-                                        b=0.0, rtol=0.0, atol=1e-7))
-            if t == 7:
-                break  # End test
+    def test_sparse_counter(self):
+        X_TRUE = generate_test_sequence(self.x.copy(), self.T, learning_rate=0.5,
+                                        beta=0.9, epsilon=1.0, sparse_counter=True)
+        optimizer_callable = lambda params: Expectigrad(params, lr=0.5, beta=0.9,
+                                                        eps=1.0, sparse_counter=True)
+        self._run_test(optimizer_callable, self.x, X_TRUE)
 
-            # Our function to be minimized is f(x_0,x_1) = x_0^2 + 4*x_1^2
+    def test_bad_lr(self):
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, lr=0.0)
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, lr=-0.1)
+
+    def test_bad_beta(self):
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, beta=-0.1)
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, beta=1.0)
+
+    def test_bad_epsilon(self):
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, eps=0.0)
+        with self.assertRaises(ValueError):
+            optimizer = Expectigrad(None, eps=-0.1)
+
+    def _run_test(self, optimizer_callable, start_point, true_sequence):
+        x = torch.from_numpy(start_point)
+        x.requires_grad_(True)
+        optimizer = optimizer_callable([x])
+
+        for i, val in enumerate(true_sequence):
+            t = i + 1
             optimizer.zero_grad()
-            y = torch.dot(torch.Tensor([1.0, 4.0]), x.square())
+
+            if (t % 2) == 1:
+                a = torch.DoubleTensor([3.0, 0.0])
+            else:
+                a = torch.DoubleTensor([1.0, 8.0])
+
+            y = torch.dot(a, x.square())
 
             # Take a gradient step with Expectigrad
             y.backward()
             optimizer.step()
+
+            # Check if the current point is correct
+            x_out = x.detach().numpy()
+            # print(i+1, x_out.astype(str), val.astype(str), flush=True)
+            self.assertTrue(np.allclose(x_out, val, rtol=1e-10, atol=0.0))
 
 
 if __name__ == '__main__':

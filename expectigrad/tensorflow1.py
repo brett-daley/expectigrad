@@ -91,7 +91,7 @@ class ExpectigradOptimizer(optimizer.Optimizer):
         ops.append(state_ops.assign(s, s_new, use_locking=self._use_locking))
 
         # Update running counter
-        if self.sparse_counter:
+        if self._sparse_counter:
             n = self.get_slot(var, 'counter')
             n_new = n + math_ops.sign(grad_sq)
             ops.append(state_ops.assign(n, n_new, use_locking=self._use_locking))
@@ -104,7 +104,7 @@ class ExpectigradOptimizer(optimizer.Optimizer):
         step = grad / (epsilon + math_ops.sqrt(average))
 
         # Update momentum
-        if self.use_momentum:
+        if self._use_momentum:
             m = self.get_slot(var, 'momentum')
             m_new = beta * m + (1.0 - beta) * step
             ops.append(state_ops.assign(m, m_new, use_locking=self._use_locking))
