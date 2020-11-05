@@ -1,10 +1,12 @@
 
 # Expectigrad: Fast Stochastic Optimization with Robust Convergence Properties
 ![pypi](https://img.shields.io/badge/pypi-0.0.0-blue)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+![python](https://img.shields.io/badge/python-3.5-blue)
+
 [![pytorch](https://img.shields.io/badge/pytorch-yes-brightgreen)](#pytorch)
 [![tensorflow1](https://img.shields.io/badge/tensorflow%201-yes-brightgreen)](#tensorflow-1.x)
 [![tensorflow2](https://img.shields.io/badge/tensorflow%202-yes-brightgreen)](#tensorflow-2.x)
-[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
 Expectigrad is a first-order stochastic optimization method that fixes the
 [known divergence issue](https://arxiv.org/abs/1904.09237)
@@ -12,10 +14,10 @@ of Adam, RMSProp, and related adaptive methods while offering better performance
 well-known deep learning benchmarks.
 
 Expectigrad introduces two innovations to adaptive gradient methods:
-- Arithmetic RMS: Computes the true RMS instead of an exponential moving average (EMA).
+- **Arithmetic RMS:** Computes the true RMS instead of an exponential moving average (EMA).
 This makes Expectigrad more robust to divergence and, in theory, less susceptible to
 gradient noise.
-- Outer momentum: Applies momentum _after_ adapting the step sizes, not
+- **Outer momentum:** Applies momentum _after_ adapting the step sizes, not
 before.
 This reduces bias in the updates by preserving the
 [superposition property](https://en.wikipedia.org/wiki/Superposition_principle).
@@ -35,8 +37,8 @@ See [installation](#installation) and [usage](#usage) below to get started.
 >  ![equation](https://latex.codecogs.com/svg.latex?%5Cquad%20g%20%5Cgets%20%5Cnabla%20f%28x%29) <br/>
 >  ![equation](https://latex.codecogs.com/svg.latex?s%20%5Cgets%20s%20&plus;%20g%5E2) <br/>
 >  ![equation](https://latex.codecogs.com/svg.latex?n%20%5Cgets%20n%20&plus;%20%5Ctext%7Bsign%7D%28g%5E2%29) <br/>
->  ![equation](https://latex.codecogs.com/svg.latex?m%20%5Cgets%20%5Cbeta%20m%20&plus;%20%281-%5Cbeta%29%20%5Cfrac%7Bg%7D%7B%5Cepsilon%20&plus;%20%5Csqrt%7B%5Cfrac%7Bs%7D%7Bn%7D%7D%7D) <br/>
->  ![equation](https://latex.codecogs.com/svg.latex?x%20%5Cgets%20x%20-%20%5Cfrac%7B%5Calpha%7D%7B1-%5Cbeta%5Et%7D%20m) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?m%20%5Cgets%20%5Cbeta%20m%20&plus;%20%281-%5Cbeta%29%20%5Ccdot%20%5Cfrac%7Bg%7D%7B%5Cepsilon%20&plus;%20%5Csqrt%7B%5Cfrac%7Bs%7D%7Bn%7D%7D%7D) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?x%20%5Cgets%20x%20-%20%5Cfrac%7B%5Calpha%7D%7B1-%5Cbeta%5Et%7D%20%5Ccdot%20m) <br/>
 > ![equation](https://latex.codecogs.com/svg.latex?%5Ctext%7Bend%20for%7D) <br/>
 > ![eqaution](https://latex.codecogs.com/svg.latex?%5Ctext%7Breturn%7D%5C%20x)
 
