@@ -26,10 +26,11 @@ class Expectigrad(optimizer_v2.OptimizerV2):
             name (str): Optional name for the operations created when applying gradients.
                 Default: 'Expectigrad'
             **kwargs: Keyword arguments. Allowed to be {`clipnorm`, `clipvalue`, `lr`,
-                `decay`}. `clipnorm` is clip gradients by norm; `clipvalue` is clip
-                gradients by value, `decay` is included for backward compatibility to
-                allow time inverse decay of learning rate. `lr` is included for backward
-                compatibility, recommended to use `learning_rate` instead.
+                `decay`}. `clipnorm` is gradient clipping by norm; `clipvalue` is
+                gradient clipping by value; `decay` is included for backward
+                compatibility to allow time inverse decay of learning rate; `lr` is
+                included for backward compatibility, recommended to use `learning_rate`
+                instead.
 
         Raises:
             ValueError: beta is not in the interval [0, 1) or epsilon is nonpositive.

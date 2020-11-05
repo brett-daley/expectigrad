@@ -1,36 +1,59 @@
 
-# Expectigrad: Rectifying AdaGrad and Adam
-[![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+# Expectigrad: Fast Stochastic Optimization with Robust Convergence Properties
+![pypi](https://img.shields.io/badge/pypi-0.0.0-blue)
+[![pytorch](https://img.shields.io/badge/pytorch-yes-brightgreen)](#pytorch)
+[![tensorflow1](https://img.shields.io/badge/tensorflow%201-yes-brightgreen)](#tensorflow-1.x)
+[![tensorflow2](https://img.shields.io/badge/tensorflow%202-yes-brightgreen)](#tensorflow-2.x)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
-Introduction about Expectigrad.
+Expectigrad is a first-order stochastic optimization method that fixes the
+[known divergence issue](https://arxiv.org/abs/1904.09237)
+of Adam, RMSProp, and related adaptive methods while offering better performance on
+well-known deep learning benchmarks.
+
+Expectigrad introduces two innovations to adaptive gradient methods:
+- Arithmetic RMS: Computes the true RMS instead of an exponential moving average (EMA).
+This makes Expectigrad more robust to divergence and, in theory, less susceptible to
+gradient noise.
+- Outer momentum: Applies momentum _after_ adapting the step sizes, not
+before.
+This reduces bias in the updates by preserving the
+[superposition property](https://en.wikipedia.org/wiki/Superposition_principle).
+
+See [the paper](https://arxiv.org/abs/2010.01356) for more details.
+
+Pytorch, TensorFlow 1.x, and TensorFlow 2.x are all supported.
+See [installation](#installation) and [usage](#usage) below to get started.
 
 ### Pseudocode
 
->```
->Let x_1 be the initial network parameters
->Initialize sum of squared gradients s = 0
->
->for t = 1,...,T do
->    s += g^2
->    x_t = x_{t-1} - αg / (sqrt(s/t) + ε)
->end for
->
->return x_T
->```
+> ![equation](https://latex.codecogs.com/svg.latex?%5Ctext%7BInitialize%20network%20parameters%7D%5C%20x) <br/>
+> ![equation](https://latex.codecogs.com/svg.latex?s%20%5Cgets%200) <br/>
+> ![equation](https://latex.codecogs.com/svg.latex?n%20%5Cgets%200) <br/>
+> ![equation](https://latex.codecogs.com/svg.latex?m%20%5Cgets%200) <br/>
+> ![equation](https://latex.codecogs.com/svg.latex?%5Ctext%7Bfor%7D%5C%20t%3D1%2C2%2C%5Cldots%5C%20%5Ctext%7Buntil%20convergence%20do%7D) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?%5Cquad%20g%20%5Cgets%20%5Cnabla%20f%28x%29) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?s%20%5Cgets%20s%20&plus;%20g%5E2) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?n%20%5Cgets%20n%20&plus;%20%5Ctext%7Bsign%7D%28g%5E2%29) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?m%20%5Cgets%20%5Cbeta%20m%20&plus;%20%281-%5Cbeta%29%20%5Cfrac%7Bg%7D%7B%5Cepsilon%20&plus;%20%5Csqrt%7B%5Cfrac%7Bs%7D%7Bn%7D%7D%7D) <br/>
+>  ![equation](https://latex.codecogs.com/svg.latex?x%20%5Cgets%20x%20-%20%5Cfrac%7B%5Calpha%7D%7B1-%5Cbeta%5Et%7D%20m) <br/>
+> ![equation](https://latex.codecogs.com/svg.latex?%5Ctext%7Bend%20for%7D) <br/>
+> ![eqaution](https://latex.codecogs.com/svg.latex?%5Ctext%7Breturn%7D%5C%20x)
 
 ### Citing
 
-If you use this code in published work, please cite the original paper:
+If you use this code for published work, please cite [the original paper](https://arxiv.org/abs/2010.01356):
 
 ```
-@inproceedings{daley2020expectigrad,
-  title={{E}xpectigrad: Rectifying {A}da{G}rad and {A}dam},
+@article{daley2020expectigrad,
+  title={Expectigrad: Fast Stochastic Optimization with Robust Convergence Properties},
   author={Daley, Brett and Amato, Christopher},
-  booktitle={},
-  pages={},
+  journal={arXiv preprint arXiv:2010.01356},
   year={2020}
 }
 ```
+
+---
 
 ## Installation
 
@@ -40,46 +63,78 @@ Use pip to quickly install Expectigrad:
 pip install expectigrad
 ```
 
-Alternatively, you can clone this repository and install manually:
+Or you can clone this repository and install manually:
 
 ```
-git clone 
+git clone https://github.com/brett-daley/expectigrad.git
 cd expectigrad
 python setup.py -e .
 ```
 
 ## Usage
 
-Depending on the deep learning framework you use, you will need to instantiate a different optimizer.
-These optimizers plug into the frameworks as usual.
-Import paths and class constructors are given below:
+Pytorch and both versions of TensorFlow are supported.
+Refer to the code snippets below to instantiate the optimizer for your deep learning framework.
 
 ### Pytorch
 
 ```python
-from expectigrad.pytorch import Expectigrad
+import expectigrad
 
-Expectigrad(
-    params, lr=1e-3, eps=1e-3
+expectigrad.pytorch.Expectigrad(
+    params, lr=0.001, beta=0.9, eps=1e-8, sparse_counter=True
 )
 ```
+
+| Args | | |
+| --- | :-: | --- |
+| params | (`iterable`) | Iterable of parameters to optimize or dicts defining parameter groups. |
+| lr | (`float`) | The learning rate, a scale factor applied to each optimizer step. Default: `0.001` |
+| beta | (`float`) | The decay rate for Expectigrad's bias-corrected, "outer" momentum. Must be in the interval [0, 1). Default: `0.9` |
+| eps | (`float`) | A small constant added to the denominator for numerical stability. Must be greater than 0. Default: `1e-8` |
+| sparse_counter | (`bool`) | If True, Expectigrad's counter increments only where the gradient is nonzero. If False, the counter increments unconditionally. Default: `True` |
+
+---
 
 ### Tensorflow 1.x
 
 ```python
-from expectigrad.tensorflow1 import ExpectigradOptimizer
+import expectigrad
 
-ExpectigradOptimizer(
-    learning_rate=1e-3, epsilon=1e-3, use_locking=False, name='Expectigrad'
+expectigrad.tensorflow1.ExpectigradOptimizer(
+    learning_rate=0.001, beta=0.9, epsilon=1e-8, sparse_counter=True,
+    use_locking=False, name='Expectigrad'
 )
 ```
+
+| Args | | |
+| --- | :-: | --- |
+| learning_rate | | The learning rate, a scale factor applied to each optimizer step. Can be a float, `tf.keras.optimizers.schedules.LearningRateSchedule`, `Tensor`, or callable that takes no arguments and returns the value to use. Default: `0.001` |
+| beta | (`float`) | The decay rate for Expectigrad's bias-corrected, "outer" momentum. Must be in the interval [0, 1). Default: `0.9` |
+| epsilon | (`float`) | A small constant added to the denominator for numerical stability. Must be greater than 0. Default: `1e-8` |
+| sparse_counter | (`bool`) | If True, Expectigrad's counter increments only where the gradient is nonzero. If False, the counter increments unconditionally. Default: `True` |
+| use_locking | (`bool`) | If True, apply use locks to prevent concurrent updates to variables. Default: `False` |
+| name | (`str`) | Optional name for the operations created when applying gradients. Default: `'Expectigrad'` |
+
+---
 
 ### Tensorflow 2.x
 
 ```python
-from expectigrad.tensorflow2 import Expectigrad
+import expectigrad
 
-Expectigrad(
-    learning_rate=1e-3, epsilon=1e-3, name='Expectigrad', **kwargs
+expectigrad.tensorflow2.Expectigrad(
+    learning_rate=0.001, beta=0.9, epsilon=1e-8, name='Expectigrad', **kwargs
 )
 ```
+
+| Args | | |
+| --- | :-: | --- |
+| learning_rate | | The learning rate, a scale factor applied to each optimizer step. Can be a float, `tf.keras.optimizers.schedules.LearningRateSchedule`, `Tensor`, or callable that takes no arguments and returns the value to use. Default: `0.001` |
+| beta | (`float`) | The decay rate for Expectigrad's bias-corrected, "outer" momentum. Must be in the interval [0, 1). Default: `0.9` |
+| epsilon | (`float`) | A small constant added to the denominator for numerical stability. Must be greater than 0. Default: `1e-8` |
+| sparse_counter | (`bool`) | If True, Expectigrad's counter increments only where the gradient is nonzero. If False, the counter increments unconditionally. Default: `True`
+| name | (`str`) | Optional name for the operations created when applying gradients. Default: `'Expectigrad'` |
+| **kwargs | | Keyword arguments. Allowed to be {`clipnorm`, `clipvalue`, `lr`, `decay`}. `clipnorm` is gradient clipping by norm; `clipvalue` is gradient clipping by value; `decay` is included for backward compatibility to allow time inverse decay of learning rate; `lr` is included for backward compatibility, recommended to use `learning_rate` instead. |
+
+---
